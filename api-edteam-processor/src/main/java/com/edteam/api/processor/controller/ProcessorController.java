@@ -4,14 +4,13 @@ import com.edteam.api.processor.controller.resource.ProcessorResource;
 import com.edteam.api.processor.dto.ProcessorDTO;
 import com.edteam.api.processor.dto.ProcessorFilesDTO;
 import com.edteam.api.processor.dto.ProcessorMultipartDTO;
+import com.edteam.api.processor.service.ChatService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import com.edteam.api.processor.service.ChatService;
 
 @Validated
 @RestController

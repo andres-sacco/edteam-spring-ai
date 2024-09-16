@@ -11,7 +11,6 @@ public class ClientDTO {
     private LocalDate updatedAt;
     private LocalDate deletedAt;
 
-
     public String getId() {
         return id;
     }

@@ -1,6 +1,5 @@
 package com.edteam.api.processor.dto;
 
-
 import java.time.LocalDateTime;
 
 public class ProcessorHistoryDTO {

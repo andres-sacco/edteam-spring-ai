@@ -1,6 +1,8 @@
 package com.edteam.api.processor.service;
 
-import com.edteam.api.processor.repository.ProcessorHistoryRepository;
+import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
+import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY;
+
 import com.edteam.api.processor.connector.SaleConnector;
 import com.edteam.api.processor.dto.ProcessorDTO;
 import com.edteam.api.processor.dto.ProcessorFilesDTO;
@@ -9,10 +11,13 @@ import com.edteam.api.processor.dto.ProcessorMultipartDTO;
 import com.edteam.api.processor.enums.APIError;
 import com.edteam.api.processor.enums.Model;
 import com.edteam.api.processor.exception.EdteamException;
+import com.edteam.api.processor.repository.ProcessorHistoryRepository;
 import com.edteam.api.processor.util.ProcessorUtil;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.PromptChatMemoryAdvisor;
@@ -25,13 +30,6 @@ import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
-import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
-import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY;
-
 @Service
 public class ChatService {
 
@@ -42,44 +40,55 @@ public class ChatService {
     private final SaleConnector connector;
     private final ProcessorHistoryRepository repository;
 
-    public ChatService(@Qualifier(value = "ollamaChatModel") ChatModel ollamaChatClient,
-                       @Qualifier(value = "openAiChatModel") ChatModel openaiChatClient,
-                       SaleConnector connector,
-                       ProcessorHistoryRepository repository) {
+    public ChatService(
+            @Qualifier(value = "ollamaChatModel") ChatModel ollamaChatClient,
+            @Qualifier(value = "openAiChatModel") ChatModel openaiChatClient,
+            SaleConnector connector,
+            ProcessorHistoryRepository repository) {
         InMemoryChatMemory memory = new InMemoryChatMemory();
 
-        this.ollamaChatClient = ChatClient.builder(ollamaChatClient).defaultAdvisors(
-                new PromptChatMemoryAdvisor(memory),
-                new MessageChatMemoryAdvisor(memory)
-        ).build();
+        this.ollamaChatClient =
+                ChatClient.builder(ollamaChatClient)
+                        .defaultAdvisors(
+                                new PromptChatMemoryAdvisor(memory),
+                                new MessageChatMemoryAdvisor(memory))
+                        .build();
 
-        this.openaiChatClient = ChatClient.builder(openaiChatClient).defaultAdvisors(
-                new PromptChatMemoryAdvisor(memory),
-                new MessageChatMemoryAdvisor(memory)
-        ).build();
+        this.openaiChatClient =
+                ChatClient.builder(openaiChatClient)
+                        .defaultAdvisors(
+                                new PromptChatMemoryAdvisor(memory),
+                                new MessageChatMemoryAdvisor(memory))
+                        .build();
 
         this.connector = connector;
         this.repository = repository;
     }
 
-
     public String queryAi(ProcessorDTO request) {
         try {
             UserMessage userMessage = new UserMessage(request.getPrompt());
 
-            if(request.getModel() == Model.LLAMA) {
+            if (request.getModel() == Model.LLAMA) {
                 throw new EdteamException(APIError.VALIDATION_ERROR);
             }
 
-            String response =  getChatClient(request.getModel())
-                    .prompt(new Prompt(List.of(userMessage),
-                    OpenAiChatOptions.builder().withFunction("SalesByPeriod").build()))
-                    .call()
-                    .content();
+            String response =
+                    getChatClient(request.getModel())
+                            .prompt(
+                                    new Prompt(
+                                            List.of(userMessage),
+                                            OpenAiChatOptions.builder()
+                                                    .withFunction("SalesByPeriod")
+                                                    .build()))
+                            .call()
+                            .content();
 
             // Update the interaction history
-            if(Objects.nonNull(request.getConversationId())) {
-                repository.save(new ProcessorHistoryDTO(request.getConversationId(), request.getPrompt(), response));
+            if (Objects.nonNull(request.getConversationId())) {
+                repository.save(
+                        new ProcessorHistoryDTO(
+                                request.getConversationId(), request.getPrompt(), response));
             }
             return response;
 
@@ -115,17 +124,24 @@ public class ChatService {
         Prompt prompt = getPrompt(request, fileContent);
         LOGGER.info(prompt.getInstructions().toString());
 
-        String response = getChatClient(request.getModel())
-                .prompt()
-                .user(prompt.toString())
-                .advisors(a -> a
-                        .param(CHAT_MEMORY_CONVERSATION_ID_KEY, request.getConversationId())
-                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100))
-                .call().content();
+        String response =
+                getChatClient(request.getModel())
+                        .prompt()
+                        .user(prompt.toString())
+                        .advisors(
+                                a ->
+                                        a.param(
+                                                        CHAT_MEMORY_CONVERSATION_ID_KEY,
+                                                        request.getConversationId())
+                                                .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100))
+                        .call()
+                        .content();
 
         // Update the interaction history
-        if(Objects.nonNull(request.getConversationId())) {
-            repository.save(new ProcessorHistoryDTO(request.getConversationId(), request.getPrompt(), response));
+        if (Objects.nonNull(request.getConversationId())) {
+            repository.save(
+                    new ProcessorHistoryDTO(
+                            request.getConversationId(), request.getPrompt(), response));
         }
 
         return response;
@@ -134,12 +150,14 @@ public class ChatService {
     private Prompt getPrompt(ProcessorDTO request, String fileContent) {
         PromptTemplate promptTemplate = getPromptTemplate();
 
-        Map<String, Object> params = Map.of("fileContent", fileContent, "prompt", request.getPrompt());
+        Map<String, Object> params =
+                Map.of("fileContent", fileContent, "prompt", request.getPrompt());
         return promptTemplate.create(params);
     }
 
     private PromptTemplate getPromptTemplate() {
-        var template = """
+        var template =
+                """
                 I am an analyst of a big company which have different reports.
                 I am mostly interested to analyze the files.
                 Here is the file content I am analyzing:
@@ -149,16 +167,13 @@ public class ChatService {
         return new PromptTemplate(template);
     }
 
-
     private ChatClient getChatClient(Model model) {
-        if(model == Model.LLAMA) {
+        if (model == Model.LLAMA) {
             return ollamaChatClient;
 
-        } else if(model == Model.OPENAI) {
+        } else if (model == Model.OPENAI) {
             return openaiChatClient;
         }
         return ollamaChatClient;
     }
-
-
 }

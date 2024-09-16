@@ -4,6 +4,8 @@ import com.edteam.api.processor.dto.ErrorDTO;
 import com.edteam.api.processor.enums.APIError;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -14,20 +16,21 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @RestControllerAdvice
 public class APIExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(EdteamException.class)
     public ResponseEntity<ErrorDTO> generalError(EdteamException e, WebRequest request) {
-        return ResponseEntity.status(e.getStatus()).body(new ErrorDTO(e.getDescription(), e.getReasons()));
+        return ResponseEntity.status(e.getStatus())
+                .body(new ErrorDTO(e.getDescription(), e.getReasons()));
     }
 
     @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
-                                                                  HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
         List<String> reasons = new ArrayList<>();
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
             reasons.add(String.format("%s - %s", error.getField(), error.getDefaultMessage()));
@@ -37,7 +40,8 @@ public class APIExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(ConstraintViolationException ex, WebRequest request) {
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            ConstraintViolationException ex, WebRequest request) {
         List<String> reasons = new ArrayList<>();
         for (ConstraintViolation error : ex.getConstraintViolations()) {
             reasons.add(String.format("%s - %s", error.getPropertyPath(), error.getMessage()));
@@ -45,5 +49,4 @@ public class APIExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(APIError.VALIDATION_ERROR.getHttpStatus())
                 .body(new ErrorDTO(APIError.VALIDATION_ERROR.getMessage(), reasons));
     }
-
 }

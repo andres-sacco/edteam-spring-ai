@@ -40,10 +40,16 @@ public class ProcessorDTO {
 
     @Override
     public String toString() {
-        return "ProcessorRequestDTO{" +
-                "model='" + model + '\'' +
-                ", conversationId='" + conversationId + '\'' +
-                ", prompt='" + prompt + '\'' +
-                '}';
+        return "ProcessorRequestDTO{"
+                + "model='"
+                + model
+                + '\''
+                + ", conversationId='"
+                + conversationId
+                + '\''
+                + ", prompt='"
+                + prompt
+                + '\''
+                + '}';
     }
 }

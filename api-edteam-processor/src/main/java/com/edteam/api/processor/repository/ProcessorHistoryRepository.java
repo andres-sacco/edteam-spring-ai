@@ -1,11 +1,10 @@
 package com.edteam.api.processor.repository;
 
 import com.edteam.api.processor.dto.ProcessorHistoryDTO;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import org.springframework.stereotype.Component;
 
 @Component
 public class ProcessorHistoryRepository {
@@ -14,7 +13,7 @@ public class ProcessorHistoryRepository {
 
     public List<ProcessorHistoryDTO> getHistoryByConversationId(String conversationId) {
         List<ProcessorHistoryDTO> results = histories.get(conversationId);
-        if(results == null) {
+        if (results == null) {
             results = new ArrayList<>();
         }
         return results;
@@ -22,7 +21,7 @@ public class ProcessorHistoryRepository {
 
     public void save(ProcessorHistoryDTO processorHistory) {
         List<ProcessorHistoryDTO> results = histories.get(processorHistory.getConversationId());
-        if(results == null) {
+        if (results == null) {
             results = new ArrayList<>();
         }
         results.add(processorHistory);

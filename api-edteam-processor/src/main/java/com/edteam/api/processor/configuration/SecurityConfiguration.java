@@ -14,26 +14,33 @@ import org.springframework.stereotype.Component;
 @EnableWebSecurity
 public class SecurityConfiguration {
 
-    @Autowired
-    private JwtRequestFilter jwtRequestFilter;
+    @Autowired private JwtRequestFilter jwtRequestFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/documentation/**").permitAll() // Public endpoints
-                        .requestMatchers("/swagger-ui.html").permitAll() // Public endpoints
-                        .requestMatchers("/swagger-ui/**").permitAll() // Public endpoints
-                        .requestMatchers("/v3/api-docs/**").permitAll() // Public endpoints
-                        .requestMatchers("/model/**").permitAll() // Public endpoints
-                        .anyRequest().authenticated()               // Protected endpoints
-                )
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers("/documentation/**")
+                                        .permitAll() // Public endpoints
+                                        .requestMatchers("/swagger-ui.html")
+                                        .permitAll() // Public endpoints
+                                        .requestMatchers("/swagger-ui/**")
+                                        .permitAll() // Public endpoints
+                                        .requestMatchers("/v3/api-docs/**")
+                                        .permitAll() // Public endpoints
+                                        .requestMatchers("/model/**")
+                                        .permitAll() // Public endpoints
+                                        .anyRequest()
+                                        .authenticated() // Protected endpoints
+                        )
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 }

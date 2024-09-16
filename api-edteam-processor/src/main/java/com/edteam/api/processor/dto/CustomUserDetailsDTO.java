@@ -1,16 +1,16 @@
 package com.edteam.api.processor.dto;
 
+import java.util.Collection;
+import java.util.List;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.List;
-
 public class CustomUserDetailsDTO implements UserDetails {
 
     private String username;
-    private String password; // Typically you wouldn't need the password if JWT is used for authentication
+    private String
+            password; // Typically you wouldn't need the password if JWT is used for authentication
     private List<SimpleGrantedAuthority> authorities;
 
     public CustomUserDetailsDTO(String username, List<SimpleGrantedAuthority> authorities) {

@@ -1,9 +1,8 @@
 package com.edteam.api.processor.connector.configuration;
 
+import java.util.HashMap;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.HashMap;
 
 @Configuration
 @ConfigurationProperties(prefix = "http-connector")

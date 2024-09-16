@@ -11,8 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AIConfiguration {
 
-    @Autowired
-    SaleConnector saleConnector;
+    @Autowired SaleConnector saleConnector;
 
     @Bean
     public FunctionCallback salesFunctionInfo() {
