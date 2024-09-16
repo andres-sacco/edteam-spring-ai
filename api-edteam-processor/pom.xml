@@ -15,7 +15,7 @@
 	<description>This API contains the logic to interact with the different models</description>
 
 	<properties>
-		<java.version>21</java.version>
+		<java.version>17</java.version>
 		<maven.version>3.8.3</maven.version>
 
 		<!-- Dependencies -->
