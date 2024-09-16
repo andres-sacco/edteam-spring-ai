@@ -56,7 +56,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
                 // Convert roles to GrantedAuthority
                 SimpleGrantedAuthority authority =
-                        new SimpleGrantedAuthority((String) claims.get("role"));
+                        new SimpleGrantedAuthority((String) claims.get("email"));
                 List<SimpleGrantedAuthority> authorities = List.of(authority);
 
                 // Create UserDetails

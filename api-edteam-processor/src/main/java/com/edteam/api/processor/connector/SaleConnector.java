@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
@@ -36,9 +37,6 @@ public class SaleConnector {
 
     public List<SaleDTO> getSales(String from, String to, String kind) {
         LOGGER.info("calling to api-sales");
-
-        System.out.println(from);
-        System.out.println(to);
 
         HostConfiguration hostConfiguration = configuration.getHosts().get(HOST);
         EndpointConfiguration endpointConfiguration =
@@ -72,9 +70,10 @@ public class SaleConnector {
                         .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                         .defaultHeader(
                                 HttpHeaders.AUTHORIZATION,
-                                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjhiNWUwZmI4LWY5NTQtNDA2Zi04MDhjLTEyYjBlNTRjZGM2NyIsImVtYWlsIjoiYWRtaW5AZWQudGVhbSIsImlzcyI6IkVEdGVhbSIsImV4cCI6MTcyNjA5MzM3MX0.DMq7y--1lrB_7I3iqFtB11trUeybBvcb9FViWj6XThE")
-                        // .defaultHeader(HttpHeaders.AUTHORIZATION,
-                        // SecurityContextHolder.getContext().getAuthentication().getCredentials().toString())
+                                SecurityContextHolder.getContext()
+                                        .getAuthentication()
+                                        .getCredentials()
+                                        .toString())
                         .clientConnector(new ReactorClientHttpConnector(httpClient))
                         .build();
 
