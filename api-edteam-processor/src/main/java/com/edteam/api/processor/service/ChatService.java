@@ -1,25 +1,36 @@
 package com.edteam.api.processor.service;
 
-import com.edteam.api.processor.ProcessorHistoryRepository;
-import com.edteam.api.processor.connector.UserConnector;
+import com.edteam.api.processor.repository.ProcessorHistoryRepository;
+import com.edteam.api.processor.connector.SaleConnector;
 import com.edteam.api.processor.dto.ProcessorDTO;
+import com.edteam.api.processor.dto.ProcessorFilesDTO;
 import com.edteam.api.processor.dto.ProcessorHistoryDTO;
+import com.edteam.api.processor.dto.ProcessorMultipartDTO;
+import com.edteam.api.processor.enums.APIError;
 import com.edteam.api.processor.enums.Model;
+import com.edteam.api.processor.exception.EdteamException;
+import com.edteam.api.processor.util.ProcessorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.chat.ChatClient;
+
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.PromptChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.InMemoryChatMemory;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+
+import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
+import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY;
 
 @Service
 public class ChatService {
@@ -28,80 +39,106 @@ public class ChatService {
 
     private final ChatClient ollamaChatClient;
     private final ChatClient openaiChatClient;
-    private final UserConnector connector;
+    private final SaleConnector connector;
     private final ProcessorHistoryRepository repository;
 
-    public ChatService(@Qualifier(value = "ollamaChatClient")ChatClient ollamaChatClient,
-                       @Qualifier(value = "openAiChatClient")ChatClient openaiChatClient,
-                       UserConnector connector,
+    public ChatService(@Qualifier(value = "ollamaChatModel") ChatModel ollamaChatClient,
+                       @Qualifier(value = "openAiChatModel") ChatModel openaiChatClient,
+                       SaleConnector connector,
                        ProcessorHistoryRepository repository) {
-        this.ollamaChatClient = ollamaChatClient;
-        this.openaiChatClient = openaiChatClient;
+        InMemoryChatMemory memory = new InMemoryChatMemory();
+
+        this.ollamaChatClient = ChatClient.builder(ollamaChatClient).defaultAdvisors(
+                new PromptChatMemoryAdvisor(memory),
+                new MessageChatMemoryAdvisor(memory)
+        ).build();
+
+        this.openaiChatClient = ChatClient.builder(openaiChatClient).defaultAdvisors(
+                new PromptChatMemoryAdvisor(memory),
+                new MessageChatMemoryAdvisor(memory)
+        ).build();
+
         this.connector = connector;
         this.repository = repository;
     }
 
+
     public String queryAi(ProcessorDTO request) {
-        //Call to the other API
-        //Validate the security
-
         try {
-            return askToAI(request);
+            UserMessage userMessage = new UserMessage(request.getPrompt());
+
+            if(request.getModel() == Model.LLAMA) {
+                throw new EdteamException(APIError.VALIDATION_ERROR);
+            }
+
+            String response =  getChatClient(request.getModel())
+                    .prompt(new Prompt(List.of(userMessage),
+                    OpenAiChatOptions.builder().withFunction("SalesByPeriod").build()))
+                    .call()
+                    .content();
+
+            // Update the interaction history
+            if(Objects.nonNull(request.getConversationId())) {
+                repository.save(new ProcessorHistoryDTO(request.getConversationId(), request.getPrompt(), response));
+            }
+            return response;
+
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new EdteamException(APIError.BAD_FORMAT);
         }
     }
 
-    public List<ProcessorHistoryDTO> getHistoryByUserId(String userId) {
-        return repository.getHistoryByUser(userId);
+    public String queryAi(ProcessorMultipartDTO request) {
+        try {
+            String fileContent = ProcessorUtil.convertFileToString(request.getFile());
+            return askToAI(request, fileContent);
+        } catch (Exception e) {
+            throw new EdteamException(APIError.BAD_FORMAT);
+        }
     }
 
-
-    private String askToAI(ProcessorDTO request) throws IOException {
-
-        String fileContent = "";
-        for (String file: request.getFiles()) {
-            ClassPathResource resource = new ClassPathResource(file);
-            Path filePath = resource.getFile().toPath();
-            fileContent = fileContent.concat(Files.readString(filePath).concat("\r\n"));
+    public String queryAi(ProcessorFilesDTO request) {
+        try {
+            String fileContent = ProcessorUtil.convertFilesToString(request.getFiles());
+            return askToAI(request, fileContent);
+        } catch (Exception e) {
+            throw new EdteamException(APIError.BAD_FORMAT);
         }
+    }
+
+    public List<ProcessorHistoryDTO> getHistoryByConversationId(String conversationId) {
+        return repository.getHistoryByConversationId(conversationId);
+    }
+
+    private String askToAI(ProcessorDTO request, String fileContent) {
 
         Prompt prompt = getPrompt(request, fileContent);
         LOGGER.info(prompt.getInstructions().toString());
 
-        String response = getChatClient(request.getModel()).call(prompt).getResult().getOutput().getContent();
+        String response = getChatClient(request.getModel())
+                .prompt()
+                .user(prompt.toString())
+                .advisors(a -> a
+                        .param(CHAT_MEMORY_CONVERSATION_ID_KEY, request.getConversationId())
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100))
+                .call().content();
 
         // Update the interaction history
-        repository.save(new ProcessorHistoryDTO(request.getUserId(), request.getPrompt(), response));
+        if(Objects.nonNull(request.getConversationId())) {
+            repository.save(new ProcessorHistoryDTO(request.getConversationId(), request.getPrompt(), response));
+        }
+
         return response;
     }
 
     private Prompt getPrompt(ProcessorDTO request, String fileContent) {
-        if(request.getHistory()) {
-            PromptTemplate promptTemplate = getPromptTemplateWithHistory();
+        PromptTemplate promptTemplate = getPromptTemplate();
 
-            List<String> interactionHistory = new ArrayList<>();
-
-            List<ProcessorHistoryDTO> histories = repository.getHistoryByUser(request.getUserId());
-            for (ProcessorHistoryDTO dto: histories) {
-                interactionHistory.add("User: " + dto.getPrompt());
-                interactionHistory.add("AI: " + dto.getResponse());
-            }
-
-            // Add historical context to the prompt
-            String history = String.join("\n", interactionHistory);
-
-            Map<String, Object> params = Map.of("history", history,"fileContent", fileContent, "prompt", request.getPrompt());
-            return promptTemplate.create(params);
-        } else {
-            PromptTemplate promptTemplate = getPromptTemplateWithoutHistory();
-
-            Map<String, Object> params = Map.of("fileContent", fileContent, "prompt", request.getPrompt());
-            return promptTemplate.create(params);
-        }
+        Map<String, Object> params = Map.of("fileContent", fileContent, "prompt", request.getPrompt());
+        return promptTemplate.create(params);
     }
 
-    private PromptTemplate getPromptTemplateWithoutHistory() {
+    private PromptTemplate getPromptTemplate() {
         var template = """
                 I am an analyst of a big company which have different reports.
                 I am mostly interested to analyze the files.
@@ -112,19 +149,6 @@ public class ChatService {
         return new PromptTemplate(template);
     }
 
-    private PromptTemplate getPromptTemplateWithHistory() {
-        var template = """
-                Previous interactions:
-                {history}
-                
-                I am an analyst of a big company which have different reports.
-                I am mostly interested to analyze the files.
-                Here is the file content I am analyzing:
-                {fileContent}
-                I want only the information {prompt} that I request it.""";
-
-        return new PromptTemplate(template);
-    }
 
     private ChatClient getChatClient(Model model) {
         if(model == Model.LLAMA) {
@@ -133,10 +157,6 @@ public class ChatService {
         } else if(model == Model.OPENAI) {
             return openaiChatClient;
         }
-
-
-
-        ollamaChatClient.
         return ollamaChatClient;
     }
 

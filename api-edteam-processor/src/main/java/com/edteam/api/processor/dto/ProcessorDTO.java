@@ -1,31 +1,18 @@
 package com.edteam.api.processor.dto;
 
 import com.edteam.api.processor.enums.Model;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-
-import java.util.List;
 
 public class ProcessorDTO {
 
     @NotNull(message = "The model must be defined")
     private Model model;
 
-    @Valid
-    @NotEmpty(message = "You need at least one file")
-    private List<String> files;
-
-    @NotBlank(message = "The userId must be defined")
-    private String userId;
+    private String conversationId;
 
     @NotBlank(message = "The prompt must be defined")
     private String prompt;
-
-    @NotNull(message = "The history must be defined")
-    private Boolean history;
-
 
     public Model getModel() {
         return model;
@@ -35,28 +22,12 @@ public class ProcessorDTO {
         this.model = model;
     }
 
-    public List<String> getFiles() {
-        return files;
+    public String getConversationId() {
+        return conversationId;
     }
 
-    public void setFiles(List<String> files) {
-        this.files = files;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public Boolean getHistory() {
-        return history;
-    }
-
-    public void setHistory(Boolean history) {
-        this.history = history;
+    public void setConversationId(String conversationId) {
+        this.conversationId = conversationId;
     }
 
     public String getPrompt() {
@@ -71,10 +42,8 @@ public class ProcessorDTO {
     public String toString() {
         return "ProcessorRequestDTO{" +
                 "model='" + model + '\'' +
-                ", files=" + files +
-                ", userId='" + userId + '\'' +
+                ", conversationId='" + conversationId + '\'' +
                 ", prompt='" + prompt + '\'' +
-                ", history=" + history +
                 '}';
     }
 }

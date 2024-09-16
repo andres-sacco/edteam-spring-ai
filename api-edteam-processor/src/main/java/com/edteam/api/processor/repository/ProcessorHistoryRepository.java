@@ -1,4 +1,4 @@
-package com.edteam.api.processor;
+package com.edteam.api.processor.repository;
 
 import com.edteam.api.processor.dto.ProcessorHistoryDTO;
 import org.springframework.stereotype.Component;
@@ -12,8 +12,8 @@ public class ProcessorHistoryRepository {
 
     static HashMap<String, List<ProcessorHistoryDTO>> histories = new HashMap<>();
 
-    public List<ProcessorHistoryDTO> getHistoryByUser(String userId) {
-        List<ProcessorHistoryDTO> results = histories.get(userId);
+    public List<ProcessorHistoryDTO> getHistoryByConversationId(String conversationId) {
+        List<ProcessorHistoryDTO> results = histories.get(conversationId);
         if(results == null) {
             results = new ArrayList<>();
         }
@@ -21,11 +21,11 @@ public class ProcessorHistoryRepository {
     }
 
     public void save(ProcessorHistoryDTO processorHistory) {
-        List<ProcessorHistoryDTO> results = histories.get(processorHistory.getUserId());
+        List<ProcessorHistoryDTO> results = histories.get(processorHistory.getConversationId());
         if(results == null) {
             results = new ArrayList<>();
         }
         results.add(processorHistory);
-        histories.put(processorHistory.getUserId(), results);
+        histories.put(processorHistory.getConversationId(), results);
     }
 }

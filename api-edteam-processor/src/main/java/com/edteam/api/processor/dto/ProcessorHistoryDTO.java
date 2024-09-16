@@ -4,13 +4,13 @@ package com.edteam.api.processor.dto;
 import java.time.LocalDateTime;
 
 public class ProcessorHistoryDTO {
-    private String userId;
+    private String conversationId;
     private LocalDateTime date;
     private String prompt;
     private String response;
 
-    public ProcessorHistoryDTO(String userId, String prompt, String response) {
-        this.userId = userId;
+    public ProcessorHistoryDTO(String conversationId, String prompt, String response) {
+        this.conversationId = conversationId;
         this.date = LocalDateTime.now();
         this.prompt = prompt;
         this.response = response;
@@ -28,7 +28,7 @@ public class ProcessorHistoryDTO {
         return response;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getConversationId() {
+        return conversationId;
     }
 }

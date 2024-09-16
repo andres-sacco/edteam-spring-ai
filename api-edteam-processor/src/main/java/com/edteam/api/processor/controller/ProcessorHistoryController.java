@@ -23,12 +23,12 @@ public class ProcessorHistoryController implements ProcessorHistoryResource {
         this.chatService = chatService;
     }
 
-    @GetMapping("/chat/history/{userId}")
+    @GetMapping("/chat/history/{conversationId}")
     @Override
-    public ResponseEntity<List<ProcessorHistoryDTO>> getHistory(@PathVariable String userId) {
-        LOGGER.info("Processing history of user {}", userId);
+    public ResponseEntity<List<ProcessorHistoryDTO>> getHistory(@PathVariable String conversationId) {
+        LOGGER.info("Processing history of conversationId {}", conversationId);
 
-        List<ProcessorHistoryDTO> response = chatService.getHistoryByUserId(userId);
+        List<ProcessorHistoryDTO> response = chatService.getHistoryByConversationId(conversationId);
         return ResponseEntity.ok().body(response);
     }
 }
