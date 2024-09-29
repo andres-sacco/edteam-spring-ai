@@ -4,6 +4,8 @@ import com.edteam.api.processor.enums.Model;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.Objects;
+
 public class ProcessorDTO {
 
     @NotNull(message = "The model must be defined")
@@ -36,6 +38,19 @@ public class ProcessorDTO {
 
     public void setPrompt(String prompt) {
         this.prompt = prompt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ProcessorDTO that = (ProcessorDTO) o;
+        return model == that.model && Objects.equals(conversationId, that.conversationId) && Objects.equals(prompt, that.prompt);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(model, conversationId, prompt);
     }
 
     @Override

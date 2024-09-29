@@ -4,10 +4,7 @@ import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvis
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY;
 
 import com.edteam.api.processor.connector.SaleConnector;
-import com.edteam.api.processor.dto.ProcessorDTO;
-import com.edteam.api.processor.dto.ProcessorFilesDTO;
-import com.edteam.api.processor.dto.ProcessorHistoryDTO;
-import com.edteam.api.processor.dto.ProcessorMultipartDTO;
+import com.edteam.api.processor.dto.*;
 import com.edteam.api.processor.enums.APIError;
 import com.edteam.api.processor.enums.Model;
 import com.edteam.api.processor.exception.EdteamException;
@@ -26,8 +23,10 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -65,13 +64,20 @@ public class ChatService {
         this.repository = repository;
     }
 
-    public String queryAi(ProcessorDTO request) {
+    @Cacheable(value = "processors", key = "#request.model + '-' + #request.prompt")
+    public AnalysisResponseDTO queryAi(ProcessorDTO request) {
         try {
-            UserMessage userMessage = new UserMessage(request.getPrompt());
-
             if (request.getModel() == Model.LLAMA) {
                 throw new EdteamException(APIError.VALIDATION_ERROR);
             }
+
+            BeanOutputConverter<AnalysisResponseDTO> beanOutputConverter =
+                    new BeanOutputConverter<>(AnalysisResponseDTO.class);
+
+            String format = beanOutputConverter.getFormat();
+
+
+            UserMessage userMessage = new UserMessage(request.getPrompt().concat(" with the format: ").concat(format));
 
             String response =
                     getChatClient(request.getModel())
@@ -90,7 +96,7 @@ public class ChatService {
                         new ProcessorHistoryDTO(
                                 request.getConversationId(), request.getPrompt(), response));
             }
-            return response;
+            return beanOutputConverter.convert(response);
 
         } catch (Exception e) {
             throw new EdteamException(APIError.BAD_FORMAT);
@@ -115,7 +121,9 @@ public class ChatService {
         }
     }
 
+    @Cacheable(value = "history", key = "#conversationId")
     public List<ProcessorHistoryDTO> getHistoryByConversationId(String conversationId) {
+        System.out.println("asdasd");
         return repository.getHistoryByConversationId(conversationId);
     }
 

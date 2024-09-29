@@ -1,6 +1,7 @@
 package com.edteam.api.processor.controller;
 
 import com.edteam.api.processor.controller.resource.ProcessorResource;
+import com.edteam.api.processor.dto.AnalysisResponseDTO;
 import com.edteam.api.processor.dto.ProcessorDTO;
 import com.edteam.api.processor.dto.ProcessorFilesDTO;
 import com.edteam.api.processor.dto.ProcessorMultipartDTO;
@@ -26,10 +27,10 @@ public class ProcessorController implements ProcessorResource {
 
     @Override
     @PostMapping(value = "/chat")
-    public ResponseEntity<String> askAi(@RequestBody @Valid ProcessorDTO request) {
+    public ResponseEntity<AnalysisResponseDTO> askAi(@RequestBody @Valid ProcessorDTO request) {
         LOGGER.info("Processing the prompt with {}", request.toString());
 
-        String response = chatService.queryAi(request);
+        AnalysisResponseDTO response = chatService.queryAi(request);
         return ResponseEntity.ok().body(response);
     }
 

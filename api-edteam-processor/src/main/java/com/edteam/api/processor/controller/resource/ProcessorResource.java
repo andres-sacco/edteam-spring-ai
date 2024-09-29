@@ -1,9 +1,6 @@
 package com.edteam.api.processor.controller.resource;
 
-import com.edteam.api.processor.dto.ErrorDTO;
-import com.edteam.api.processor.dto.ProcessorDTO;
-import com.edteam.api.processor.dto.ProcessorFilesDTO;
-import com.edteam.api.processor.dto.ProcessorMultipartDTO;
+import com.edteam.api.processor.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -97,5 +94,5 @@ public interface ProcessorResource {
                                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                                         schema = @Schema(implementation = ErrorDTO.class)))
             })
-    ResponseEntity<String> askAi(@RequestBody @Valid ProcessorDTO request);
+    ResponseEntity<AnalysisResponseDTO> askAi(@RequestBody @Valid ProcessorDTO request);
 }
