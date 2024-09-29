@@ -27,4 +27,4 @@ COPY --from=builder /workspace/application/ ./
 EXPOSE 8080
 
 # Start the application using JarLauncher and specifying the config file location
-ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher", "--spring.config.location=classpath:/application.yml"]
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher", "--spring.config.location=classpath:/application.yml"]
