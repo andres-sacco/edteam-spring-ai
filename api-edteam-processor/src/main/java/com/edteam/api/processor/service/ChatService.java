@@ -3,7 +3,6 @@ package com.edteam.api.processor.service;
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
 import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY;
 
-import com.edteam.api.processor.connector.SaleConnector;
 import com.edteam.api.processor.dto.*;
 import com.edteam.api.processor.enums.APIError;
 import com.edteam.api.processor.enums.Model;
@@ -26,7 +25,6 @@ import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -36,13 +34,11 @@ public class ChatService {
 
     private final ChatClient ollamaChatClient;
     private final ChatClient openaiChatClient;
-    private final SaleConnector connector;
     private final ProcessorHistoryRepository repository;
 
     public ChatService(
             @Qualifier(value = "ollamaChatModel") ChatModel ollamaChatClient,
             @Qualifier(value = "openAiChatModel") ChatModel openaiChatClient,
-            SaleConnector connector,
             ProcessorHistoryRepository repository) {
         InMemoryChatMemory memory = new InMemoryChatMemory();
 
@@ -60,11 +56,9 @@ public class ChatService {
                                 new MessageChatMemoryAdvisor(memory))
                         .build();
 
-        this.connector = connector;
         this.repository = repository;
     }
 
-    @Cacheable(value = "processors", key = "#request.model + '-' + #request.prompt")
     public AnalysisResponseDTO queryAi(ProcessorDTO request) {
         try {
             if (request.getModel() == Model.LLAMA) {
@@ -121,9 +115,7 @@ public class ChatService {
         }
     }
 
-    @Cacheable(value = "history", key = "#conversationId")
     public List<ProcessorHistoryDTO> getHistoryByConversationId(String conversationId) {
-        System.out.println("asdasd");
         return repository.getHistoryByConversationId(conversationId);
     }
 
