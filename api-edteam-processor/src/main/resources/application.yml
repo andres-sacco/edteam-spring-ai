@@ -16,8 +16,6 @@ spring:
         options:
           model: gpt-4o-mini
           temperature: 0.7
-  cache:
-    type: caffeine
 server:
   port: 8080
   error:
