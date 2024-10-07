@@ -41,14 +41,3 @@ info:
   contact:
     email: "sacco.andres@gmail.com"
     slack: "adsacco"
-
-http-connector:
-  hosts:
-    api-sales:
-      host: admin-production-307b.up.railway.app
-      endpoints:
-        get-sales-info:
-          url: "/v1/sales"
-          readTimeout: 5000
-          writeTimeout: 5000
-          connectionTimeout: 5000
