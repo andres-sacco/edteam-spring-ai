@@ -9,12 +9,6 @@ import com.edteam.api.processor.util.ProcessorUtil;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.PromptChatMemoryAdvisor;
-import org.springframework.ai.chat.memory.InMemoryChatMemory;
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -22,30 +16,10 @@ public class ChatService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChatService.class);
 
-    private final ChatClient ollamaChatClient;
-    private final ChatClient openaiChatClient;
     private final ProcessorHistoryRepository repository;
 
     public ChatService(
-            @Qualifier(value = "ollamaChatModel") ChatModel ollamaChatClient,
-            @Qualifier(value = "openAiChatModel") ChatModel openaiChatClient,
             ProcessorHistoryRepository repository) {
-        InMemoryChatMemory memory = new InMemoryChatMemory();
-
-        this.ollamaChatClient =
-                ChatClient.builder(ollamaChatClient)
-                        .defaultAdvisors(
-                                new PromptChatMemoryAdvisor(memory),
-                                new MessageChatMemoryAdvisor(memory))
-                        .build();
-
-        this.openaiChatClient =
-                ChatClient.builder(openaiChatClient)
-                        .defaultAdvisors(
-                                new PromptChatMemoryAdvisor(memory),
-                                new MessageChatMemoryAdvisor(memory))
-                        .build();
-
         this.repository = repository;
     }
 
